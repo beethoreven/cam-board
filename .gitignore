@@ -1,0 +1,7 @@
+# FVM 下載的 Flutter SDK 連結。每台機器自己產生，版本以 .fvmrc 為準。
+.fvm/
+
+.DS_Store
+
+# Claude Code 的個人設定（每台機器不一樣，不該共用）。
+.claude/settings.local.json

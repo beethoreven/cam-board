@@ -1,0 +1,9 @@
+[submodule "cam-board-core"]
+	path = cam-board-core
+	url = https://github.com/beethoreven/cam-board-core.git
+[submodule "cam-board-client"]
+	path = cam-board-client
+	url = https://github.com/beethoreven/cam-board-client.git
+[submodule "cam-board-host"]
+	path = cam-board-host
+	url = https://github.com/beethoreven/cam-board-host.git
