@@ -85,3 +85,9 @@ cd cam-board-client && fvm flutter build apk --debug
 ## 版本
 
 Flutter 固定在 3.47.9，由根目錄的 `.fvmrc` 鎖定。開發機是 Intel Mac，Flutter 已預告未來停止支援在 Intel Mac 上建置，所以升版前必須先確認新版仍然支援。因為這個限制而不能用最新版的套件，連同原因列在 `README.md`，新增這類套件時要更新那張表。
+
+## 權限
+
+權限規則在 `.claude/settings.json`。測試、靜態檢查、格式化不用詢問；`git push` 一律被擋，推送由專案擁有者自己在終端機做，不要嘗試繞過。
+
+已知的缺口：deny 只擋 `git push ...` 這種寫法，`git -C <資料夾> push` 不會被規則擋下，只會跳出詢問。這是 2026-11-23 練習權限時刻意留下的，專案擁有者已經知道；要補的話在 deny 加一條 `Bash(git -C * push *)`。

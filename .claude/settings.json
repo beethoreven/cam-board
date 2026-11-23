@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(fvm dart test *)",
+      "Bash(fvm flutter test *)",
+      "Bash(fvm dart analyze *)",
+      "Bash(fvm flutter analyze *)",
+      "Bash(fvm dart format *)"
+    ],
+    "deny": [
+      "Bash(git push *)"
+    ]
+  }
+}
