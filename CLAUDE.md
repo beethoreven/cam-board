@@ -40,6 +40,13 @@ fvm flutter test
 fvm flutter test test/widget_test.dart          # 單一檔案
 ```
 
+鄉民端另有一組在真的 macOS 程式裡、用真的區域網路跑的測試。要先在另一個終端機廣播一個假看板，測試才搜尋得到：
+
+```bash
+dns-sd -R "整合測試看板" _cam-board._tcp local 47999      # 保持執行，測完再按 Ctrl+C
+cd cam-board-host && fvm flutter test integration_test -d macos
+```
+
 執行與建置：
 
 ```bash
@@ -53,14 +60,16 @@ cd cam-board-client && fvm flutter build apk --debug
 
 **規則放在 core，app 只負責接上真實世界。** `cam-board-core` 不依賴 Flutter，也不碰網路、鏡頭、視窗；它定義的是可以單獨測試的規則。app 那一層在做任何事之前先問 core 的狀態物件（`BoardSession`、`ViewerSession`）這個動作合不合法，再去操作網路或畫面。新增行為時先在 core 加規則和測試，再到 app 接上。
 
-**連線流程**（app 端尚未實作，訊息格式已在 core 的 `signal_message.dart` 定案）：
+**app 的分層**：每個 app 有一個 controller（`BoardController`、`BoardListController`）把 core 的規則接上 `lib/services/` 裡的網路服務。服務都先定義介面再實作，測試時換成 `test/fakes.dart` 裡的假服務；只有 WebSocket 的部分另外用真的連線測。
+
+**連線流程**（第 1、2 步已實作；第 3 步之後的視訊尚未實作，訊息格式已在 core 的 `signal_message.dart` 定案）：
 
 1. 看板端註冊時用 mDNS 廣播 `_cam-board._tcp`，鄉民端搜尋得到看板清單。部分手機熱點會擋 mDNS，所以鄉民端另外支援手動輸入看板端顯示的位址。
-2. 看板端在手機上開 WebSocket 伺服器（預設埠 47800）。鄉民端連上後送 `join`，看板端回 `offer`，鄉民端回 `answer`，雙方互送 `candidate`。
+2. 看板端在手機上開 WebSocket 伺服器（預設埠 47800）。鄉民端一連上，看板端先送 `hello` 報上名稱和通訊協定版本；鄉民端手動輸入位址時就是靠它確認對方是看板。鄉民端要看畫面時送 `join`，看板端回 `offer`，鄉民端回 `answer`，雙方互送 `candidate`。
 3. 之後畫面走 WebRTC 在兩台裝置之間直接傳。
 4. 任一方送 `bye` 並附上原因就結束。
 
-每個鄉民端各一條連線，一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`join` 帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`。
+每個鄉民端各一條連線，一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`。
 
 **「不用留黑」**：鄉民端的視窗永遠等於畫面的大小和比例，不留黑邊。「放到最大」是在螢幕內維持比例放大並置中，不使用 macOS 原生全螢幕（原生全螢幕會把空白處塗黑）。計算在 core 的 `view_geometry.dart`。
 
@@ -79,6 +88,8 @@ cd cam-board-client && fvm flutter build apk --debug
 - 旋轉（90／180／270 度）和左右反轉只影響鄉民端自己的顯示。
 - 畫質優先：網路變差時降低每秒張數，不降解析度。
 - 看板端的鏡頭控制：縮放、點擊對焦、切換前後鏡頭。
+
+目前的限制：看板端要留在前景，退到背景後可能從看板清單消失。螢幕恆亮和背景執行排在視訊那一步一起做。
 
 尚未實作、之後可能加入：看板端單獨踢出其中一個鄉民端。
 

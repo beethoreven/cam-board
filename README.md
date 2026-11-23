@@ -64,6 +64,16 @@ cd cam-board-client && fvm flutter analyze && fvm flutter test
 cd cam-board-host && fvm flutter analyze && fvm flutter test
 ```
 
+鄉民端在真的 macOS 程式裡、用真的區域網路跑的測試。先在另一個終端機廣播一個假看板：
+
+```bash
+dns-sd -R "整合測試看板" _cam-board._tcp local 47999
+```
+
+```bash
+cd cam-board-host && fvm flutter test integration_test -d macos
+```
+
 ## 執行
 
 鄉民端（在這台 Mac 上）：
@@ -81,7 +91,7 @@ cd cam-board-client && fvm flutter run
 ## 目前進度
 
 - [x] 專案骨架、共用邏輯與單元測試
-- [ ] 找到看板：看板端註冊／撤銷註冊，鄉民端的看板清單
+- [x] 找到看板：看板端註冊／撤銷註冊，鄉民端的看板清單（自動搜尋與手動輸入位址）
 - [ ] 看到畫面：視訊串流，多個鄉民端同時觀看
 - [ ] 鄉民端的視窗：跟著畫面比例、旋轉、左右反轉、放到最大
 - [ ] 看板端的鏡頭控制：縮放、對焦、切換前後鏡頭
