@@ -26,7 +26,8 @@
 
 | 套件 | 目前版本 | 為什麼不是最新版 |
 | --- | --- | --- |
-| `window_manager` | 0.6.0（尚未加入，鄉民端做視窗功能時才會用到） | 0.7.0 要求 Flutter 3.50 |
+| `window_manager` | 0.6.0 | 0.7 以上要求 Flutter 3.50 |
+| `nativeapi` | 0.5.10 | `window_manager` 0.6.0 的底層，版本要跟它一致。直接引用是為了取得螢幕可用範圍；原本該用的 `screen_retriever` 最新版要求 Flutter 3.50 |
 
 升 Flutter 時，把這張表裡的套件一起升到最新版。
 
@@ -71,7 +72,13 @@ dns-sd -R "整合測試看板" _cam-board._tcp local 47999
 ```
 
 ```bash
-cd cam-board-host && fvm flutter test integration_test -d macos
+cd cam-board-host && fvm flutter test integration_test/discovery_test.dart -d macos
+```
+
+視窗控制的測試會實際移動視窗，不需要假看板：
+
+```bash
+cd cam-board-host && fvm flutter test integration_test/window_control_test.dart -d macos
 ```
 
 ## 執行
@@ -91,7 +98,8 @@ cd cam-board-client && fvm flutter run
 ## 目前進度
 
 - [x] 專案骨架、共用邏輯與單元測試
-- [x] 找到看板：看板端註冊／撤銷註冊，鄉民端的看板清單（自動搜尋與手動輸入位址）。2026-11-24 以 Android 實機與 Mac 驗收通過，一般 Wi-Fi 與手機熱點都可用
-- [ ] 看到畫面：視訊串流，多個鄉民端同時觀看
-- [ ] 鄉民端的視窗：跟著畫面比例、旋轉、左右反轉、放到最大
-- [ ] 看板端的鏡頭控制：縮放、對焦、切換前後鏡頭
+- [x] 找到看板：看板端註冊／撤銷註冊，鄉民端的看板清單（自動搜尋與手動輸入位址）。2026-11-24 以 Android 實機與 Mac 驗收通過，一般 Wi-Fi 與手機熱點都能自動搜尋到看板，不需要手動輸入位址
+- [x] 看到畫面：視訊串流，多個鄉民端同時觀看（程式與自動測試完成，實機尚未驗收）
+- [x] 鄉民端的視窗：跟著畫面比例、旋轉、左右反轉、放到最大（視窗控制已在真的 macOS 視窗上測過，實機尚未驗收）
+- [x] 看板端的鏡頭控制：縮放、對焦、切換前後鏡頭（程式與自動測試完成，實機尚未驗收）
+- [ ] 使用者體驗的調整（全部功能驗收後再做）

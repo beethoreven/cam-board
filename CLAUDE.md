@@ -44,8 +44,11 @@ fvm flutter test test/widget_test.dart          # 單一檔案
 
 ```bash
 dns-sd -R "整合測試看板" _cam-board._tcp local 47999      # 保持執行，測完再按 Ctrl+C
-cd cam-board-host && fvm flutter test integration_test -d macos
+cd cam-board-host && fvm flutter test integration_test/discovery_test.dart -d macos
+cd cam-board-host && fvm flutter test integration_test/window_control_test.dart -d macos   # 會實際移動視窗，不需要 dns-sd
 ```
+
+整合測試要一個檔案一個檔案跑，兩個一起跑會互相搶同一個視窗。
 
 執行與建置：
 
@@ -60,18 +63,18 @@ cd cam-board-client && fvm flutter build apk --debug
 
 **規則放在 core，app 只負責接上真實世界。** `cam-board-core` 不依賴 Flutter，也不碰網路、鏡頭、視窗；它定義的是可以單獨測試的規則。app 那一層在做任何事之前先問 core 的狀態物件（`BoardSession`、`ViewerSession`）這個動作合不合法，再去操作網路或畫面。新增行為時先在 core 加規則和測試，再到 app 接上。
 
-**app 的分層**：每個 app 有一個 controller（`BoardController`、`BoardListController`）把 core 的規則接上 `lib/services/` 裡的網路服務。服務都先定義介面再實作，測試時換成 `test/fakes.dart` 裡的假服務；只有 WebSocket 的部分另外用真的連線測。
+**app 的分層**：每個 app 的 controller 把 core 的規則接上 `lib/services/` 裡的服務。看板端是 `BoardController`；鄉民端是 `BoardListController`（看板清單）和 `ViewerController`（觀看）。服務（區域網路廣播與搜尋、連線、鏡頭、WebRTC、視窗、螢幕恆亮）都先定義介面再實作，測試時換成 `test/fakes.dart` 裡的假服務。真的實作另外測：WebSocket 用真的連線、視窗用真的 macOS 視窗；WebRTC 和鏡頭只能靠實機驗收。
 
-**連線流程**（第 1、2 步已實作；第 3 步之後的視訊尚未實作，訊息格式已在 core 的 `signal_message.dart` 定案）：
+**連線流程**（訊息格式在 core 的 `signal_message.dart`）：
 
 1. 看板端註冊時用 mDNS 廣播 `_cam-board._tcp`，鄉民端搜尋得到看板清單。部分手機熱點會擋 mDNS，所以鄉民端另外支援手動輸入看板端顯示的位址。
 2. 看板端在手機上開 WebSocket 伺服器（預設埠 47800）。鄉民端一連上，看板端先送 `hello` 報上名稱和通訊協定版本；鄉民端手動輸入位址時就是靠它確認對方是看板。鄉民端要看畫面時送 `join`，看板端回 `offer`，鄉民端回 `answer`，雙方互送 `candidate`。
-3. 之後畫面走 WebRTC 在兩台裝置之間直接傳。
+3. 之後畫面走 WebRTC 在兩台裝置之間直接傳，只送畫面、不送聲音。兩端都不設定任何 ICE 伺服器，因為只在區域網路內連線，這也是沒有網路的熱點能用的原因。
 4. 任一方送 `bye` 並附上原因就結束。
 
-每個鄉民端各一條連線，一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`。
+看板端第一個鄉民端加入時才開鏡頭，最後一個離開時關掉。每個鄉民端各一條連線（`ViewerLink`），共用同一個鏡頭畫面，所以一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`。
 
-**「不用留黑」**：鄉民端的視窗永遠等於畫面的大小和比例，不留黑邊。「放到最大」是在螢幕內維持比例放大並置中，不使用 macOS 原生全螢幕（原生全螢幕會把空白處塗黑）。計算在 core 的 `view_geometry.dart`。
+**「不用留黑」**：鄉民端的視窗永遠等於畫面的大小和比例，不留黑邊。「放到最大」是在螢幕內維持比例放大並置中，不使用 macOS 原生全螢幕（原生全螢幕會把空白處塗黑）。計算在 core 的 `view_geometry.dart`，`ViewerController` 每次畫面大小、旋轉角度或放大狀態改變時重算並套用到視窗。視窗控制用 `window_manager` 0.6.0 底層的 `nativeapi`（見 `window_control.dart` 開頭的說明）。
 
 ## 已定案的規格
 
@@ -89,7 +92,9 @@ cd cam-board-client && fvm flutter build apk --debug
 - 畫質優先：網路變差時降低每秒張數，不降解析度。
 - 看板端的鏡頭控制：縮放、點擊對焦、切換前後鏡頭。
 
-目前的限制：看板端要留在前景，退到背景後可能從看板清單消失。螢幕恆亮和背景執行排在視訊那一步一起做。
+目前的限制：看板端要留在前景，退到背景後可能從看板清單消失、畫面也會停。註冊期間螢幕會保持恆亮，所以手機架著不動時不受影響。背景執行需要 Android 的前景服務，尚未實作。
+
+使用者體驗的調整（提示文字、過渡畫面、按鈕樣式等）刻意留到全部功能完成之後再一起處理，開發途中不要做。
 
 尚未實作、之後可能加入：看板端單獨踢出其中一個鄉民端。
 
