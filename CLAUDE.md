@@ -48,7 +48,13 @@ cd cam-board-host && fvm flutter test integration_test/discovery_test.dart -d ma
 cd cam-board-host && fvm flutter test integration_test/window_control_test.dart -d macos   # 會實際移動視窗，不需要 dns-sd
 ```
 
-整合測試要一個檔案一個檔案跑，兩個一起跑會互相搶同一個視窗。
+整合測試要一個檔案一個檔案跑，一起跑會互相搶同一個視窗。
+
+手機接著、而且已經在看板端按了「註冊」時，可以讓真的鄉民端連過去確認收得到畫面（位址用看板端畫面上顯示的）。改動連線或視訊相關的程式後要跑這個，因為其他測試裡的鏡頭和視訊都是假的：
+
+```bash
+cd cam-board-host && fvm flutter test integration_test/watch_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800
+```
 
 執行與建置：
 
@@ -71,6 +77,8 @@ cd cam-board-client && fvm flutter build apk --debug
 2. 看板端在手機上開 WebSocket 伺服器（預設埠 47800）。鄉民端一連上，看板端先送 `hello` 報上名稱和通訊協定版本；鄉民端手動輸入位址時就是靠它確認對方是看板。鄉民端要看畫面時送 `join`，看板端回 `offer`，鄉民端回 `answer`，雙方互送 `candidate`。
 3. 之後畫面走 WebRTC 在兩台裝置之間直接傳，只送畫面、不送聲音。兩端都不設定任何 ICE 伺服器，因為只在區域網路內連線，這也是沒有網路的熱點能用的原因。
 4. 任一方送 `bye` 並附上原因就結束。
+
+網路路徑（`candidate`）常常比連線資訊還早到，兩端都用 core 的 `CandidateGate` 先留著，等連線資訊處理完再交給 WebRTC；鄉民端另外把收到的訊息排隊，一則處理完才處理下一則。少了這兩件事，連線會時好時壞。
 
 看板端第一個鄉民端加入時才開鏡頭，最後一個離開時關掉。每個鄉民端各一條連線（`ViewerLink`），共用同一個鏡頭畫面，所以一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`。
 
