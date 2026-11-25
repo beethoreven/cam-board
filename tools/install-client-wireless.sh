@@ -10,6 +10,10 @@
 #   tools/install-client-wireless.sh
 # 手機不只一支時，用 ADB_SERIAL 指定：ADB_SERIAL=192.168.1.115:39731 tools/install-client-wireless.sh
 set -u
+# macOS 內建的 bash 3.2 在 UTF-8 的終端機下，變數後面直接接中文（例如「$remote，」）
+# 會把中文的一部分當成變數名稱，報出「unbound variable」。固定用 C 就不會；
+# 中文訊息照樣顯示得出來，因為畫出文字的是終端機，不是 bash。
+export LC_ALL=C
 APK=${1:-"$(dirname "$0")/../cam-board-client/build/app/outputs/flutter-apk/app-debug.apk"}
 DEVICE=${ADB_SERIAL:-$(adb devices | awk 'NR>1 && $2=="device"{print $1; exit}')}
 [ -n "$DEVICE" ] || { echo "adb 找不到手機"; exit 1; }
