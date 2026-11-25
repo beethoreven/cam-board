@@ -54,7 +54,12 @@ cd cam-board-host && fvm flutter test integration_test/window_control_test.dart 
 
 ```bash
 cd cam-board-host && fvm flutter test integration_test/watch_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800
+cd cam-board-host && fvm flutter test integration_test/record_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800   # 抄錄；印出「請在看板端按拍照」後 60 秒內要在手機上按一次「拍照」
 ```
+
+這些 `-d macos` 的測試，測試的視窗要在最前面才會動。使用者自己也開著一個鄉民端時，測試會卡住不動：不要關掉使用者的鄉民端，改用 `osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <測試程式的 pid>) to true'` 把測試的視窗叫到最前面。
+
+手機用無線 adb 連著時，傳大檔會卡住，直接 `adb install` 或 `flutter run` 都裝不上去。用 `tools/install-client-wireless.sh`（先 `fvm flutter build apk --debug --target-platform android-arm64`）。
 
 執行與建置：
 
@@ -82,7 +87,11 @@ cd cam-board-client && fvm flutter build apk --debug
 
 鄉民端從點了看板起算，超過 core 的 `connectTimeout`（5 秒）畫面還沒出來就放棄並回到清單。原因由 core 的 `ConnectProgress` 依連線進行到哪一步判斷：連不到看板端、看板端沒回應、交換到一半中斷、或看板端的路徑都送完了（收到 `candidates_done`）卻沒有一條連得通。最後一種代表兩台裝置之間的網路不通，重試沒有用。`candidates_done` 只用來判斷原因，不交給 WebRTC。計時在 `ViewerController`。
 
-看板端第一個鄉民端加入時才開鏡頭，最後一個離開時關掉。每個鄉民端各一條連線（`ViewerLink`），共用同一個鏡頭畫面，所以一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`（目前是 2）。
+**抄錄**：鄉民端連上後可以按「我要抄錄」，選一個位置，在裡面建立 `{看板名稱}抄錄紀錄_26-11-25-14-30-05` 這種名稱的資料夾，並送 `record_start` 告訴看板端。看板端按「拍照」時，擷取鏡頭現在的畫面（還沒經過視訊壓縮的 PNG），只對抄錄中的鄉民端送 `shot`，後面緊接著一筆 WebSocket 的二進位訊息就是那張 PNG；沒有人在抄錄時什麼都不做。鄉民端套用自己當下的旋轉與左右反轉後存成 `001.png`、`002.png`……，存好才回 `shot_saved`，看板端這時才顯示『{鄉民的名稱}抄錄了這個內容』。鄉民的名稱在 `join` 裡帶過去，沒填時用電腦的名稱。按「抄錄完了」送 `record_stop`；觀看結束時抄錄也跟著結束。規則在 core 的 `recording.dart`。
+
+**看板端的鏡頭控制**：縮放、對焦、擷取畫面走自己寫的 Android 程式（`cam-board-client/android/.../CameraControl.kt`），不用 flutter_webrtc 的 `Helper`。原因是套件設定縮放或對焦時會把鏡頭的設定整個換掉、互相蓋掉，也沒有真的觸發對焦，擷取功能存的又是 JPEG。所以 `CameraSource.apply` 每次都同時帶縮放和對焦，不要拆開。這段 Kotlin 用反射取得 flutter_webrtc 1.6.3 沒有公開的欄位，升級套件前要照 README 版本那一節的說明檢查。「自動對焦」開關的規則（開著時點擊對焦維持 5 秒、關著時一直鎖住、鏡頭重開時套回去）在 core 的 `focus_control.dart`。
+
+看板端第一個鄉民端加入時才開鏡頭，最後一個離開時關掉。每個鄉民端各一條連線（`ViewerLink`），共用同一個鏡頭畫面，所以一個看板可以同時給多個鄉民端看；一個鄉民端一次只看一個看板。`hello` 和 `join` 都帶有通訊協定版本，兩端版本不同時在這一步就拒絕。改動訊息格式時要遞增 `protocolVersion`（目前是 3）。
 
 **「不用留黑」**：鄉民端的視窗永遠等於畫面的大小和比例，不留黑邊。「放到最大」是在螢幕內維持比例放大並置中，不使用 macOS 原生全螢幕（原生全螢幕會把空白處塗黑）。計算在 core 的 `view_geometry.dart`，`ViewerController` 每次畫面大小、旋轉角度或放大狀態改變時重算並套用到視窗。視窗控制用 `window_manager` 0.6.0 底層的 `nativeapi`（見 `window_control.dart` 開頭的說明）。
 
@@ -90,8 +99,10 @@ cd cam-board-client && fvm flutter build apk --debug
 
 畫面上的用詞是固定的，不要改寫：
 
-- 看板端：「註冊」「撤銷註冊」，觀看中退出叫「**不給看了**」
-- 鄉民端：退出叫「**不看了**」
+- 看板端：「註冊」「撤銷註冊」，觀看中退出叫「**不給看了**」，「自動對焦」（開關）、「拍照」
+- 鄉民端：退出叫「**不看了**」，「我要抄錄」「抄錄完了」，名稱欄位叫「名稱」
+- 看板端的提示：『{鄉民的名稱}抄錄了這個內容』
+- 抄錄的資料夾：`{看板名稱}抄錄紀錄_26-11-25-14-30-05`（年月日時分秒各兩位，用 `-` 連接）
 - App 顯示名稱：「看板端」「鄉民端」
 
 行為：
@@ -104,7 +115,6 @@ cd cam-board-client && fvm flutter build apk --debug
 
 目前的限制：看板端要留在前景，退到背景後可能從看板清單消失、畫面也會停。註冊期間螢幕會保持恆亮，所以手機架著不動時不受影響。背景執行需要 Android 的前景服務，尚未實作。
 
-看板端放大中（超過 1 倍）點擊對焦沒有作用。這是刻意的：flutter_webrtc 1.6.3 在 Android 上設定對焦點會把縮放洗回 1 倍，兩者不能並存，原因和拿掉的條件寫在 `BoardController.focusAt` 的註解。
 
 使用者體驗的調整（提示文字、過渡畫面、按鈕樣式等）刻意留到全部功能完成之後再一起處理，開發途中不要做。
 
