@@ -18,6 +18,9 @@ APK=${1:-"$(dirname "$0")/../cam-board-client/build/app/outputs/flutter-apk/app-
 DEVICE=${ADB_SERIAL:-$(adb devices | awk 'NR>1 && $2=="device"{print $1; exit}')}
 [ -n "$DEVICE" ] || { echo "adb 找不到手機"; exit 1; }
 [ -f "$APK" ] || { echo "找不到安裝檔：$APK"; exit 1; }
+# 這支腳本只裝現有的安裝檔，不會重新建置。印出它是什麼時候建置的，
+# 忘了先建置時才看得出來裝上去的是舊的。
+echo "安裝檔的建置時間：$(date -r "$APK" '+%Y-%m-%d %H:%M:%S')"
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
