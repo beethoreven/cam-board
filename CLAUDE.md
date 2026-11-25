@@ -120,6 +120,14 @@ cd cam-board-client && fvm flutter build apk --debug
 
 尚未實作、之後可能加入：看板端單獨踢出其中一個鄉民端。
 
+**正式版還沒打包過（2026-11-25）。** 到目前為止兩個 app 都只用開發版執行。做打包時要先處理這幾件事，而且要實機驗證過才算數：
+
+- 看板端的 `android/app/src/main/AndroidManifest.xml` 沒有 `android.permission.INTERNET`（開發版是 Flutter 自動加的），正式版很可能開不了伺服器。
+- 鄉民端的 `macos/Runner/Release.entitlements` 比 `DebugProfile.entitlements` 少了 `com.apple.security.network.server`，視訊連線很可能需要。
+- 看板端正式版目前用開發用的金鑰簽章（`build.gradle.kts`），自己用可以，要發給別人前要換。
+- 兩個 app 的版本號都還是 `0.1.0+1`。
+- 看板端和相機服務出錯時不會發現、也不會重開鏡頭（畫面停住但仍顯示有鄉民端在看）。
+
 ## 版本
 
 Flutter 固定在 3.47.9，由根目錄的 `.fvmrc` 鎖定。開發機是 Intel Mac，Flutter 已預告未來停止支援在 Intel Mac 上建置，所以升版前必須先確認新版仍然支援。因為這個限制而不能用最新版的套件，連同原因列在 `README.md`，新增這類套件時要更新那張表。
