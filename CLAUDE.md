@@ -66,6 +66,8 @@ cd cam-board-host && fvm flutter test integration_test/record_app_real_board_tes
 
 兩端都會記錄每一張照片的去向：看板端在 logcat（`adb logcat -d | grep "I flutter"`，「照片 N 送給…」「回報收到，花了…毫秒」「已經 5 秒，還沒回報收到」），鄉民端在執行它的終端機（「看板端說要傳照片 N」「收到…bytes 的資料」「等了 5 秒還沒到」）。2026-11-26 發生過照片的資料沒送到鄉民端、整條連線跟著卡住、約一分半後畫面中斷，事後重現不出來、原因不明；這些紀錄就是為了下次發生時分得出是哪一邊。再發生時先不要關掉兩邊的程式。
 
+同一天第二次發生時查到的：出問題前，手機送往電腦的封包就已經收不到回應（STUN 沒有回應、手機的 Wi-Fi 品質分數從 94 掉到 1），拍照只是讓人發現；那一整段抄錄視訊也只有約 0.5 Mbps，因為送出的流量大半是重送。連拍、鄉民端存檔、放到最大、視窗被蓋住，實機都試過，不會造成重送或速率下降，所以是網路本身掉封包，還不知道是哪一段。下次懷疑網路時先跑 `tools/watch-network.sh <手機的 IP>`，它同時量電腦到手機、電腦到基地台、手機到基地台。手機端 WebRTC 的統計在 logcat（`Current BWE`、結束觀看時的 `RetransmittedBitrateSentInBps`）；logcat 預設只留幾分鐘，要查久一點先 `adb logcat -G 64M`。
+
 這些 `-d macos` 的測試，測試的視窗要在最前面才會動。使用者自己也開著一個鄉民端時，測試會卡住不動：不要關掉使用者的鄉民端，改用 `osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <測試程式的 pid>) to true'` 把測試的視窗叫到最前面。
 
 手機用無線 adb 連著時，傳大檔會卡住，直接 `adb install` 或 `flutter run` 都裝不上去。用 `tools/install-client-wireless.sh`（先 `fvm flutter build apk --debug --target-platform android-arm64`）。

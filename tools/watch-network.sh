@@ -5,6 +5,8 @@
 #
 # 用法：tools/watch-network.sh <手機的 IP> [存放紀錄的資料夾]
 # 例如：tools/watch-network.sh 192.168.1.115
+# 同時有 USB 和無線兩條 adb 連線時，用 ANDROID_SERIAL 指定一條（USB 的比較穩）：
+#   ANDROID_SERIAL=17c6bde8 tools/watch-network.sh 192.168.1.115
 #
 # 怎麼看：出問題的那幾秒，
 #   只有「電腦 → 手機」掉          → 手機和基地台之間，或手機本身
