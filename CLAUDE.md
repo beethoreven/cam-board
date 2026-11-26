@@ -57,6 +57,15 @@ cd cam-board-host && fvm flutter test integration_test/watch_real_board_test.dar
 cd cam-board-host && fvm flutter test integration_test/record_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800   # 抄錄；印出「請在看板端按拍照」後 60 秒內要在手機上按一次「拍照」
 ```
 
+查「拍照沒反應」這類問題時，另有兩個連續抄錄的測試。它們自己不按拍照，要在抄錄的那段時間內用手或 `adb shell input tap` 按看板端的「拍照」，測試會印出每一張什麼時候收到、存到：
+
+```bash
+cd cam-board-host && fvm flutter test integration_test/record_many_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800 --dart-define=SECONDS=90   # 只有連線這一層
+cd cam-board-host && fvm flutter test integration_test/record_app_real_board_test.dart -d macos --dart-define=BOARD=192.168.1.115:47800 --dart-define=SECONDS=90    # 整個鄉民端；加 --dart-define=MAXIMIZE=true 先放到最大
+```
+
+兩端都會記錄每一張照片的去向：看板端在 logcat（`adb logcat -d | grep "I flutter"`，「照片 N 送給…」「回報收到，花了…毫秒」「已經 5 秒，還沒回報收到」），鄉民端在執行它的終端機（「看板端說要傳照片 N」「收到…bytes 的資料」「等了 5 秒還沒到」）。2026-11-26 發生過照片的資料沒送到鄉民端、整條連線跟著卡住、約一分半後畫面中斷，事後重現不出來、原因不明；這些紀錄就是為了下次發生時分得出是哪一邊。再發生時先不要關掉兩邊的程式。
+
 這些 `-d macos` 的測試，測試的視窗要在最前面才會動。使用者自己也開著一個鄉民端時，測試會卡住不動：不要關掉使用者的鄉民端，改用 `osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <測試程式的 pid>) to true'` 把測試的視窗叫到最前面。
 
 手機用無線 adb 連著時，傳大檔會卡住，直接 `adb install` 或 `flutter run` 都裝不上去。用 `tools/install-client-wireless.sh`（先 `fvm flutter build apk --debug --target-platform android-arm64`）。
