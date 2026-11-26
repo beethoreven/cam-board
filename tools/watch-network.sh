@@ -29,5 +29,18 @@ ping --apple-time -i 0.5 "$phone" > "$out/mac-to-phone.log" 2>&1 &
 ping --apple-time -i 0.5 "$gateway" > "$out/mac-to-gateway.log" 2>&1 &
 # 手機上的 ping 不帶時間，用 -D 讓它印出時間戳記。adb 斷掉時這一份會停。
 adb shell ping -D -i 0.5 "$gateway" > "$out/phone-to-gateway.log" 2>&1 &
+# 傳照片的那條連線（看板端的 47800 埠）在兩端各有多少資料卡在佇列裡，每秒記一次。
+# 照片送不到時：
+#   電腦這邊的 Recv-Q 一直有東西     → 資料到了電腦，鄉民端沒有去讀
+#   手機那邊的 Send-Q 一直有東西     → 資料卡在手機送不出去（看同一行的 retrans、rto）
+#   兩邊都是 0                       → 看板端的程式根本沒把資料交給系統
+(
+  while true; do
+    netstat -anv -p tcp 2>/dev/null | grep -E '[.]47800 ' | sed "s/^/$(date +%H:%M:%S) /"
+    sleep 1
+  done
+) > "$out/mac-tcp-47800.log" 2>&1 &
+adb shell 'while true; do t=$(date +%H:%M:%S); ss -tin 2>/dev/null | grep -A1 ":47800 " | sed "s/^/$t /"; sleep 1; done' \
+  > "$out/phone-tcp-47800.log" 2>&1 &
 trap 'kill $(jobs -p) 2>/dev/null' EXIT INT TERM
 wait
