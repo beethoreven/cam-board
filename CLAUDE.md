@@ -68,6 +68,15 @@ cd cam-board-host && fvm flutter test integration_test/record_app_real_board_tes
 
 同一天第二次發生時查到的：出問題前，手機送往電腦的封包就已經收不到回應（STUN 沒有回應、手機的 Wi-Fi 品質分數從 94 掉到 1），拍照只是讓人發現；那一整段抄錄視訊也只有約 0.5 Mbps，因為送出的流量大半是重送。連拍、鄉民端存檔、放到最大、視窗被蓋住，實機都試過，不會造成重送或速率下降，所以是網路本身掉封包，還不知道是哪一段。下次懷疑網路時先跑 `tools/watch-network.sh <手機的 IP>`，它同時量電腦到手機、電腦到基地台、手機到基地台。手機端 WebRTC 的統計在 logcat（`Current BWE`、結束觀看時的 `RetransmittedBitrateSentInBps`）；logcat 預設只留幾分鐘，要查久一點先 `adb logcat -G 64M`。
 
+**兩端的紀錄檔（2026-11-27 加的，為了查「視訊速率掉到下限就回不來、畫面停住」；只留紀錄，不改行為，原因查到之前不要拿掉）。** 兩端所有 `debugPrint` 都另外寫一份到檔案，每一行帶時間，超過 20 MB 會把舊的改名成 `.old`：
+
+```bash
+adb shell "run-as tw.com.tutorarthur.camboard.client cat code_cache/cam-board-client-debug.log" > /tmp/cam-board-client-debug.log   # 看板端；重裝 app 會清掉
+cat ~/Library/Containers/tw.com.tutorarthur.camboard.host/Data/tmp/cam-board-host-debug.log                                          # 鄉民端
+```
+
+裡面除了照片的去向，還有每一條視訊連線的狀態變化（`連線 看板端#1：ICE → …`）和每秒一次的 WebRTC 統計（`統計 看板端#1 outbound-rtp …`、`candidate-pair …`；鄉民端是 `inbound-rtp`）。統計是從連線開始累計的，要看某一段就拿前後兩筆相減。查這個問題時先看：看板端的 `availableOutgoingBitrate`（估計的頻寬）、`retransmittedBytesSent`（重送）、`targetBitrate`；鄉民端的 `packetsReceived`、`packetsLost`、`framesDecoded`、`freezeCount`；兩端 `candidate-pair` 的 `requestsSent`／`responsesReceived`（確認對方還在的封包有沒有回應）。程式在 `lib/services/debug_log.dart`（兩個 app 各一份）。整合測試不經過 `main()`，所以不寫檔，紀錄只在測試的輸出裡。
+
 這些 `-d macos` 的測試，測試的視窗要在最前面才會動。使用者自己也開著一個鄉民端時，測試會卡住不動：不要關掉使用者的鄉民端，改用 `osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <測試程式的 pid>) to true'` 把測試的視窗叫到最前面。
 
 手機用無線 adb 連著時，傳大檔會卡住，直接 `adb install` 或 `flutter run` 都裝不上去。用 `tools/install-client-wireless.sh`（先 `fvm flutter build apk --debug --target-platform android-arm64`）。
