@@ -77,6 +77,8 @@ cat ~/Library/Containers/tw.com.tutorarthur.camboard.host/Data/tmp/cam-board-hos
 
 裡面除了照片的去向，還有每一條視訊連線的狀態變化（`連線 看板端#1：ICE → …`）和每秒一次的 WebRTC 統計（`統計 看板端#1 outbound-rtp …`、`candidate-pair …`；鄉民端是 `inbound-rtp`）。統計是從連線開始累計的，要看某一段就拿前後兩筆相減。查這個問題時先看：看板端的 `availableOutgoingBitrate`（估計的頻寬）、`retransmittedBytesSent`（重送）、`targetBitrate`；鄉民端的 `packetsReceived`、`packetsLost`、`framesDecoded`、`freezeCount`；兩端 `candidate-pair` 的 `requestsSent`／`responsesReceived`（確認對方還在的封包有沒有回應）。程式在 `lib/services/debug_log.dart`（兩個 app 各一份）。整合測試不經過 `main()`，所以不寫檔，紀錄只在測試的輸出裡。
 
+**2026-11-27 用上面的紀錄查到的（還沒修，原因只查到一半）。** 在使用者家裡的 Wi-Fi（5GHz 基地台接在 D-Link DSL-6740C 後面）上，視訊連線的 UDP 路徑會突然變成「手機往電腦幾乎全掉」：手機無線網卡照常送出（`/proc/net/dev` 的 wlan0 送出數每秒 150～1700），電腦無線網卡沒收到（`netstat -I en0 -b` 的收到數跟視訊連線收到的一致）。同一時間同方向另一條單純的 UDP（`nc -u`，7 Mbps）和 TCP 都正常，所以只有 WebRTC 那一條被影響。WebRTC 另外還有一條 ICE-TCP 的備用路徑是通的，但 UDP 那條每隔約 8 秒漏過一個確認封包就被判定「又通了」而切回去，於是畫面「通幾秒、斷幾秒」，最後停住；頻寬估計掉到下限回不來也是這個造成的，不是 WebRTC 自己卡住。看板端紀錄裡同一秒有兩筆 `candidate-pair`、其中一筆「送很多、收 0」就是這個狀況。改用手機熱點（不經過那台基地台）跑四分鐘沒有發生，只有一般的速率起伏。已經排除的：鄉民端太忙、放到最大、視窗被蓋住、連拍、手機用電池或充電、手機的 ARP 紀錄失效。照片連線偶爾卡住（TCP 只剩涓滴）看起來是同一個環境問題，電腦端的 Recv-Q 一直是 0，不是鄉民端沒讀。
+
 這些 `-d macos` 的測試，測試的視窗要在最前面才會動。使用者自己也開著一個鄉民端時，測試會卡住不動：不要關掉使用者的鄉民端，改用 `osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is <測試程式的 pid>) to true'` 把測試的視窗叫到最前面。
 
 手機用無線 adb 連著時，傳大檔會卡住，直接 `adb install` 或 `flutter run` 都裝不上去。用 `tools/install-client-wireless.sh`（先 `fvm flutter build apk --debug --target-platform android-arm64`）。
