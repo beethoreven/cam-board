@@ -160,10 +160,10 @@ cd cam-board-client && fvm flutter build apk --debug
 
 尚未實作、之後可能加入：看板端單獨踢出其中一個鄉民端。
 
-**正式版還沒打包過（2026-11-25）。** 到目前為止兩個 app 都只用開發版執行。做打包時要先處理這幾件事，而且要實機驗證過才算數：
+**正式版：鄉民端 2026-11-28 第一次建置，看板端還沒有。** 鄉民端用 `cd cam-board-host && fvm flutter build macos --release` 建置，成品在 `build/macos/Build/Products/Release/cam-board-host.app`，可以直接開啟或複製到「應用程式」，不用每次等 `flutter run` 重新建置。改了鄉民端的程式之後要重新建置一次才會反映到這個 app。做打包時要先處理這幾件事，而且要實機驗證過才算數：
 
 - 看板端的 `android/app/src/main/AndroidManifest.xml` 沒有 `android.permission.INTERNET`（開發版是 Flutter 自動加的），正式版很可能開不了伺服器。
-- 鄉民端的 `macos/Runner/Release.entitlements` 比 `DebugProfile.entitlements` 少了 `com.apple.security.network.server`，視訊連線很可能需要。
+- 鄉民端的 `macos/Runner/Release.entitlements` 已補上 `com.apple.security.network.server`（2026-11-28）。正式版建得出來、能啟動、會寫紀錄檔；**實際連到看板端看畫面和抄錄還沒有用正式版驗過**。建出來的 app 只有本機簽章（adhoc），在這台電腦上可以用，要給別人得用 Developer ID 簽章並公證。
 - 看板端正式版目前用開發用的金鑰簽章（`build.gradle.kts`），自己用可以，要發給別人前要換。
 - 兩個 app 的版本號都還是 `0.1.0+1`。
 - 看板端只在回到前景、而且有人在看時檢查鏡頭；前景中相機服務出錯不會馬上發現（鄉民端會因為沒有新畫面而要求重建，但鏡頭本身不會被重開）。
