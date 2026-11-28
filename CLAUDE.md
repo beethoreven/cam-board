@@ -98,6 +98,12 @@ cd cam-board-client && fvm flutter run                  # 看板端，需要接�
 cd cam-board-client && fvm flutter build apk --debug
 ```
 
+兩端的圖示（看板端是古代的告示牌，鄉民端是一個人站在告示牌前的背影，Q 版，2026-11-28 使用者定的方向）是用 `tools/icons/make.py` 裡的 SVG 畫的。要改圖就改那個檔案再執行一次，它會產生各種尺寸並直接放進兩個 app；不要手動改 app 裡的 PNG。看板端在 Android 8 以上用「前景＋背景」兩層的圖示。
+
+```bash
+python3 tools/icons/make.py
+```
+
 ## 架構
 
 **規則放在 core，app 只負責接上真實世界。** `cam-board-core` 不依賴 Flutter，也不碰網路、鏡頭、視窗；它定義的是可以單獨測試的規則。app 那一層在做任何事之前先問 core 的狀態物件（`BoardSession`、`ViewerSession`）這個動作合不合法，再去操作網路或畫面。新增行為時先在 core 加規則和測試，再到 app 接上。
