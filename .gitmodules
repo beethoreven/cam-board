@@ -7,3 +7,6 @@
 [submodule "cam-board-host"]
 	path = cam-board-host
 	url = https://github.com/beethoreven/cam-board-host.git
+[submodule "cam-board-web"]
+	path = cam-board-web
+	url = https://github.com/cam-board/cam-board-web.git

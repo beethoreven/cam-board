@@ -104,7 +104,7 @@ cd cam-board-client && fvm flutter build apk --debug
 python3 tools/icons/make.py
 ```
 
-**網站 `cam-board-web`（2026-11-28 加的，還沒上線）。** 使用者要一個像 all-mo-diary、mama-fufood 那樣的網站。那兩個專案的網站是 GitHub Pages 上的靜態網頁加管理後台；cam-board 沒有伺服器也沒有登入，所以只做靜態的部分：介紹、兩個 App 的下載、安裝說明（含 Mac 第一次打開要「強制打開」）、畫面去了哪裡。下載按鈕連到 `beethoreven/cam-board-client` 與 `beethoreven/cam-board-host` 的 GitHub Releases（標籤 `v1.0.0`，檔名 `cam-board-client-1.0.0.apk`、`cam-board-host-1.0.0.zip`），版本號在 `cam-board-web/js/config.js`。整理好的安裝檔放在 `dist/`（不進版本控制）。這個資料夾目前是自己一個本機的 git repo，還沒有遠端、還沒掛成 submodule：要放在哪個 GitHub 帳號或組織下由使用者決定（那兩個專案是各開一個跟專案同名的組織，網址才會是 `<專案>.github.io/<專案>-web/`）。網站上的文字是先擬的，使用者還沒看過。
+**網站 `cam-board-web`（2026-11-28 加的，還沒上線）。** 使用者要一個像 all-mo-diary、mama-fufood 那樣的網站。那兩個專案的網站是 GitHub Pages 上的靜態網頁加管理後台；cam-board 沒有伺服器也沒有登入，所以只做靜態的部分：介紹、兩個 App 的下載、安裝說明（含 Mac 第一次打開要「強制打開」）、畫面去了哪裡。下載按鈕連到 `beethoreven/cam-board-client` 與 `beethoreven/cam-board-host` 的 GitHub Releases（標籤 `v1.0.0`，檔名 `cam-board-client-1.0.0.apk`、`cam-board-host-1.0.0.zip`），版本號在 `cam-board-web/js/config.js`。整理好的安裝檔放在 `dist/`（不進版本控制）。使用者 2026-11-28 決定照那兩個專案的做法，開一個跟專案同名的 GitHub 組織 `cam-board`，repo 是 `cam-board/cam-board-web`，網址會是 `https://cam-board.github.io/cam-board-web/`；已經掛成 submodule，組織、repo、Pages 的設定和推送由使用者自己做。網站上的文字是先擬的，使用者還沒看過。
 
 ## 架構
 
