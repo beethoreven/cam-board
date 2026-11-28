@@ -162,9 +162,10 @@ cd cam-board-client && fvm flutter build apk --debug
 
 **正式版：鄉民端 2026-11-28 第一次建置，看板端還沒有。** 鄉民端用 `cd cam-board-host && fvm flutter build macos --release` 建置，成品在 `build/macos/Build/Products/Release/cam-board-host.app`，可以直接開啟或複製到「應用程式」，不用每次等 `flutter run` 重新建置。改了鄉民端的程式之後要重新建置一次才會反映到這個 app。做打包時要先處理這幾件事，而且要實機驗證過才算數：
 
-- 看板端的 `android/app/src/main/AndroidManifest.xml` 沒有 `android.permission.INTERNET`（開發版是 Flutter 自動加的），正式版很可能開不了伺服器。
+- 看板端的 `android/app/src/main/AndroidManifest.xml` 已補上 `android.permission.INTERNET`（2026-11-28；開發版是 Flutter 自動加的，正式版要自己寫，沒有它手機上開不了給鄉民端連的伺服器）。正式版建得出來（`fvm flutter build apk --release --target-platform android-arm64`，成品在 `build/app/outputs/flutter-apk/app-release.apk`），**還沒有裝到手機上跑過**。正式版會縮減程式碼，`CameraControl.kt` 用反射讀的那些欄位靠 flutter_webrtc 自帶的保留規則（`-keep class com.cloudwebrtc.webrtc.**`、`org.webrtc.**`）才不會被改名，升級套件時要確認規則還在。
 - 鄉民端的 `macos/Runner/Release.entitlements` 已補上 `com.apple.security.network.server`（2026-11-28）。正式版建得出來、能啟動、會寫紀錄檔；**實際連到看板端看畫面和抄錄還沒有用正式版驗過**。建出來的 app 只有本機簽章（adhoc），在這台電腦上可以用，要給別人得用 Developer ID 簽章並公證。
-- 看板端正式版目前用開發用的金鑰簽章（`build.gradle.kts`），自己用可以，要發給別人前要換。
+- 看板端正式版目前用開發用的金鑰簽章（`build.gradle.kts`）。Android 的簽章不用付費，自己產生一把金鑰就好；不換也裝得起來，但那把開發用金鑰只存在這台電腦上，電腦重灌或換電腦就沒了，之後出的新版會因為簽章不同而裝不上去，使用者得先移除舊版。要不要換、金鑰放哪裡，由使用者決定。
+- 使用者沒有 Apple 的付費開發者帳號，也不打算買：鄉民端只能是本機簽章，拿到別台 Mac 第一次開會被系統擋，要到「系統設定 → 隱私權與安全性」按「強制打開」。這是定案，發佈時附上說明就好，不要再提公證。
 - 兩個 app 的版本號都還是 `0.1.0+1`。
 - 看板端只在回到前景、而且有人在看時檢查鏡頭；前景中相機服務出錯不會馬上發現（鄉民端會因為沒有新畫面而要求重建，但鏡頭本身不會被重開）。
 
