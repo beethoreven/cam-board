@@ -5,3 +5,6 @@
 
 # Claude Code 的個人設定（每台機器不一樣，不該共用）。
 .claude/settings.local.json
+
+# 整理好要上傳到 GitHub Releases 的安裝檔。
+dist/

@@ -104,6 +104,8 @@ cd cam-board-client && fvm flutter build apk --debug
 python3 tools/icons/make.py
 ```
 
+**網站 `cam-board-web`（2026-11-28 加的，還沒上線）。** 使用者要一個像 all-mo-diary、mama-fufood 那樣的網站。那兩個專案的網站是 GitHub Pages 上的靜態網頁加管理後台；cam-board 沒有伺服器也沒有登入，所以只做靜態的部分：介紹、兩個 App 的下載、安裝說明（含 Mac 第一次打開要「強制打開」）、畫面去了哪裡。下載按鈕連到 `beethoreven/cam-board-client` 與 `beethoreven/cam-board-host` 的 GitHub Releases（標籤 `v1.0.0`，檔名 `cam-board-client-1.0.0.apk`、`cam-board-host-1.0.0.zip`），版本號在 `cam-board-web/js/config.js`。整理好的安裝檔放在 `dist/`（不進版本控制）。這個資料夾目前是自己一個本機的 git repo，還沒有遠端、還沒掛成 submodule：要放在哪個 GitHub 帳號或組織下由使用者決定（那兩個專案是各開一個跟專案同名的組織，網址才會是 `<專案>.github.io/<專案>-web/`）。網站上的文字是先擬的，使用者還沒看過。
+
 ## 架構
 
 **規則放在 core，app 只負責接上真實世界。** `cam-board-core` 不依賴 Flutter，也不碰網路、鏡頭、視窗；它定義的是可以單獨測試的規則。app 那一層在做任何事之前先問 core 的狀態物件（`BoardSession`、`ViewerSession`）這個動作合不合法，再去操作網路或畫面。新增行為時先在 core 加規則和測試，再到 app 接上。
